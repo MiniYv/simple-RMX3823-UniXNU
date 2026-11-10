@@ -28,18 +28,31 @@ requires_kernel_header = true
 #
 # Must match the "UEFI FD" entry in
 # Platforms/Qualcomm/rmx3823Pkg/Library/MemoryMapLib/MemoryMapLib.c
-# (0xA7000000, 0x00400000). blocks is derived as size / 4096 by build_uefi.py.
+# (0xA8000000, 0x00400000). blocks is derived as size / 4096 by build_uefi.py.
 #
-# Both values come from the board's own uefiplatLA.cfg, which reserves
-# 0xA7000000 + 0x00400000 as "UEFI FD" and the following 2 MiB at 0xA7400000 as
-# "UEFI FD Reserved". The stock uefi.elf is a 3 MiB image loaded at 0xA7000000,
-# so it sits in the first three quarters of the same carveout; declaring the
-# full 4 MiB here means our volume occupies exactly the window the vendor
-# reserves for it and has 1 MiB of headroom before it would collide with
-# "UEFI FD Reserved".
+# UNIXNU LOCAL CHANGE (fork of Janit8r/uefi-rmx3823, branch unixnu/gt5-minimal):
+# the upstream author placed the FD at 0xA7000000, mirroring the stock XBL
+# carveout (stock uefi.elf, a 3 MiB ELF, is loaded there by XBL). However this
+# port does NOT go through XBL's uefi_a loading path - it boots via
+# `fastboot boot`, where ABL decompresses the boot-image kernel to kernel_addr
+# and BootShim relocates the FD to FD_BASE. An independently built image that
+# ran its firmware at 0xA8000000 (boot-gt5-v0smoke31.img, kernel_addr
+# 0xA8000000) is the only variant observed to reach a working display on real
+# RMX3823 hardware; every 0xA7000000-based attempt stopped at the ABL splash.
+# So the whole UEFI FD block (0xA7000000..0xA8000000, exactly 16 MiB in the
+# MemoryMapLib map) is shifted up by 16 MiB to 0xA8000000..0xA9000000:
+#   - "UEFI FD" block + all derived regions (FD Reserved, CPU Vectors,
+#     Info Blk, MMU PageTables, Log Buffer, UEFI Stack, SEC Heap, Sched Heap,
+#     FV Region, UEFI RESV) move +0x01000000;
+#   - "Kernel" reservation moves from 0xA8000000/0x10000000 to
+#     0xA9000000/0x0F000000 so it ends exactly at Display Reserved
+#     (0xB8000000) - the kernel window shrinks from 256 MiB to 240 MiB;
+#   - Display Reserved (0xB8000000) and everything below 0xA8000000 is
+#     untouched.
+# Size stays 0x400000 (4 MiB), same headroom layout as upstream.
 #
 [uefi_fd]
-base = 0xA7000000
+base = 0xA8000000
 size = 0x400000
 
 #
