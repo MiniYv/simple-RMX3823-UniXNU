@@ -1,0 +1,19 @@
+diff --git a/BaseTools/Plugin/OverrideValidation/OverrideValidation.py b/BaseTools/Plugin/OverrideValidation/OverrideValidation.py
+index f9ebfd3fbd..7f4d3e71ee 100644
+--- a/BaseTools/Plugin/OverrideValidation/OverrideValidation.py
++++ b/BaseTools/Plugin/OverrideValidation/OverrideValidation.py
+@@ -164,6 +164,14 @@ try:
+                     )
+                 )
+ 
++                if fullpath is None:
++                    # UNIXNU LOCAL PATCH: upstream crashes with TypeError when a
++                    # DSC-referenced INF cannot be resolved on this system.
++                    logging.warning(
++                        "OverrideValidation: cannot resolve INF path '%s', skipping" % file
++                    )
++                    continue
++
+                 m_result = self.override_detect_process(
+                     thebuilder, fullpath, temp_list, modulenode, status
+                 )

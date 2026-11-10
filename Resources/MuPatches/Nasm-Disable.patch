@@ -1,0 +1,4 @@
+diff --git a/BaseTools/Bin/nasm_ext_dep.yaml b/BaseTools/Bin/nasm_ext_dep.yaml.disabled
+similarity index 100%
+rename from BaseTools/Bin/nasm_ext_dep.yaml
+rename to BaseTools/Bin/nasm_ext_dep.yaml.disabled
