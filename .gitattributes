@@ -17,3 +17,8 @@
 *.jpg binary
 *.jar binary
 *.efi binary
+
+# Patches must be stored byte-exact: their context lines carry the CRLF
+# endings of the target files inside submodules, and eol=lf normalisation
+# silently breaks git apply.
+*.patch -text
