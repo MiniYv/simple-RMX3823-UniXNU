@@ -37,22 +37,29 @@ fastboot → ABL(gzip) → BootShim → SEC → 固件卷解压(LZMA)
    分层打印内存中的固件实况；解压失败时停机而非返回。
 5. **控制台参数**：每行 30ms、字体 2 倍、写满回卷（保留最后 115 行）。
 
-## 构建要点
+## 构建
+
+先用上游脚本准备工具链（`./setup_env.sh -p <apt|dnf|pacman|zypper>` 按发行版
+安装主机依赖，详见 [Building.md](Building.md)），然后：
 
 ```bash
-# 环境：隔离 venv + 干净 PATH（默认 PATH 中的 rm 包装器会在第 50 次删除时
-# 阻断 make；PYTHONPATH 必须清空，否则 stuart 的删除操作会被拦截）
-export PATH=/usr/lib/llvm-22/bin:<venv>/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-export PYTHONPATH=
+python -m venv .venv && . .venv/bin/activate
+pip install -r pip-requirements.txt
 export CLANGPDB_AARCH64_PREFIX=aarch64-linux-gnu-
-export RMX3823_EXTRA_PACKAGES="<UniXNU>/package:<UniXNU>/drivers/DarwinBoot"
-python build_uefi.py -d rmx3823 -r DEBUG   # RELEASE 目前链接失败（Sec 的串口构造函数）
-
-# 启动镜像打包（ABL 仅接受这一组参数）：
-#   header v0 / kernel_addr 0xA8000000 / tags 0x01E00000 / pagesize 4096
-#   载荷 = gzip(BootShim.bin + SILICIUM_UEFI.fd) + 2041002 字节 DTB 包
-#   （DTB 包自可正常显示的参考镜像尾部切出，magic d00dfeed）
+export RMX3823_EXTRA_PACKAGES="<UniXNU 路径>/package:<UniXNU 路径>/drivers/DarwinBoot"
+python build_uefi.py -d rmx3823 -r DEBUG
 ```
+
+注意：
+
+- 目前仅支持 DEBUG：RELEASE 链接失败（Sec 的无条件串口构造函数）。
+- Mu_Basecore 的修复（nasm NuGet 禁用、OverrideValidation 空路径修复）以补丁
+  形式保存在 `Resources/MuPatches`，由 `build_uefi.py` 自动应用/清理——
+  全新克隆无需任何手工步骤。
+- 启动镜像打包（ABL 仅接受这一组参数）：header v0 / kernel_addr
+  0xA8000000 / tags 0x01E00000 / pagesize 4096；载荷 =
+  gzip(BootShim.bin + SILICIUM_UEFI.fd) + 2041002 字节 DTB 包
+  （自可正常显示的参考镜像尾部切出，magic d00dfeed）。
 
 ## TODO（下一阶段）
 

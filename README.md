@@ -48,23 +48,30 @@ registration (see TODO).
 5. **Console parameters**: 30 ms per line, 2x font, wrap when full (keeps the
    last 115 lines).
 
-## Build notes
+## Build
+
+Set up the host toolchain with the upstream scripts (`./setup_env.sh -p <apt|dnf|pacman|zypper>`
+installs the host packages; see [Building.md](Building.md)), then:
 
 ```bash
-# Environment: isolated venv + clean PATH (the default PATH contains an rm
-# wrapper that blocks make after the 50th deletion; PYTHONPATH must be
-# emptied or stuart deletes get intercepted)
-export PATH=/usr/lib/llvm-22/bin:<venv>/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-export PYTHONPATH=
+python -m venv .venv && . .venv/bin/activate
+pip install -r pip-requirements.txt
 export CLANGPDB_AARCH64_PREFIX=aarch64-linux-gnu-
-export RMX3823_EXTRA_PACKAGES="<UniXNU>/package:<UniXNU>/drivers/DarwinBoot"
-python build_uefi.py -d rmx3823 -r DEBUG   # RELEASE currently fails to link (Sec serial constructor)
-
-# Boot image packaging (the only parameter set ABL accepts):
-#   header v0 / kernel_addr 0xA8000000 / tags 0x01E00000 / pagesize 4096
-#   payload = gzip(BootShim.bin + SILICIUM_UEFI.fd) + 2041002-byte DTB blob
-#   (DTB blob cut from a known-good reference image, magic d00dfeed)
+export RMX3823_EXTRA_PACKAGES="<path to UniXNU>/package:<path to UniXNU>/drivers/DarwinBoot"
+python build_uefi.py -d rmx3823 -r DEBUG
 ```
+
+Notes:
+
+- DEBUG only for now: RELEASE fails to link (Sec's unconditional serial
+  constructor).
+- The Mu_Basecore fixes (nasm NuGet disable, OverrideValidation null-path
+  fix) are carried as patches in `Resources/MuPatches` and applied/cleaned
+  automatically by `build_uefi.py` — a fresh clone needs no manual step.
+- Boot image packaging (the only parameter set ABL accepts): header v0 /
+  kernel_addr 0xA8000000 / tags 0x01E00000 / pagesize 4096; payload =
+  gzip(BootShim.bin + SILICIUM_UEFI.fd) + 2041002-byte DTB blob (cut from
+  a known-good reference image, magic d00dfeed).
 
 ## TODO (next phase)
 
