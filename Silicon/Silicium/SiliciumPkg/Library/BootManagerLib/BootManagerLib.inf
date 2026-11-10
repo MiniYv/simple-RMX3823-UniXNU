@@ -37,6 +37,7 @@
   BootGraphicsLib
   DevicePathLib
   PrintLib
+  UefiBootManagerLib
 
 [Pcd]
   gEfiMdePkgTokenSpaceGuid.PcdPlatformBootTimeOut

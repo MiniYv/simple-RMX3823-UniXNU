@@ -18,6 +18,9 @@
 #include <Library/BootGraphicsLib.h>
 #include <Library/BootGraphics.h>
 #include <Library/PrintLib.h>
+#include <Library/UefiBootManagerLib.h>
+
+#include <Protocol/GraphicsOutput.h>
 
 #include <Configuration/BootDevices.h>
 
@@ -201,25 +204,73 @@ VOID
 EFIAPI
 PlatformBootManagerUnableToBoot ()
 {
-  EFI_STATUS Status;
+  EFI_STATUS                    Status;
+  UINTN                         OptionCount;
+  EFI_BOOT_MANAGER_LOAD_OPTION  *Options;
+  EFI_GRAPHICS_OUTPUT_PROTOCOL  *Gop;
+  CHAR16                        Line[192];
+  UINTN                         Index;
 
+  //
   // Execute Secondary Unable To Boot
+  //
   DeviceBootManagerUnableToBoot ();
 
-  // Display No Boot OS Logo
-  Status = DisplayBootGraphic (BG_NO_BOOT_OS);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((EFI_D_ERROR, "%a: Failed to Display No Boot OS Logo! Status = %r\n", __FUNCTION__, Status));
-    Print (L"No Operating System Found! Please make sure that an OS is Installed.\n");
+  //
+  // UNIXNU DIAGNOSTIC BUILD -- do not ship.
+  //
+  // The stock path paints BG_NO_BOOT_OS over the console, stalls for 10 s and
+  // ends with ResetSystem (EfiResetShutdown).  On RMX3823 that genuinely
+  // powers the handset off, which is why every bring-up attempt finished with
+  // a black panel and a 05c6:900e QUSB_BULK device on the host instead of any
+  // readable output.  Keep UEFI alive, dump what BDS actually saw, then halt
+  // so the panel keeps showing the evidence.
+  //
+  Gop         = NULL;
+  Options     = NULL;
+  OptionCount = 0;
+
+  Status = gBS->LocateProtocol (&gEfiGraphicsOutputProtocolGuid, NULL, (VOID **)&Gop);
+
+  gST->ConOut->OutputString (gST->ConOut, L"\r\n\r\n=== UNIXNU DIAG: BDS found no bootable option ===\r\n");
+
+  if (!EFI_ERROR (Status) && (Gop != NULL) && (Gop->Mode != NULL) && (Gop->Mode->Info != NULL)) {
+    UnicodeSPrint (
+      Line,
+      sizeof (Line),
+      L"  GOP: %ux%u  PixelsPerScanLine=%u  FB=0x%lx  Size=0x%lx\r\n",
+      (UINTN)Gop->Mode->Info->HorizontalResolution,
+      (UINTN)Gop->Mode->Info->VerticalResolution,
+      (UINTN)Gop->Mode->Info->PixelsPerScanLine,
+      (UINTN)Gop->Mode->FrameBufferBase,
+      (UINTN)Gop->Mode->FrameBufferSize
+      );
+    gST->ConOut->OutputString (gST->ConOut, Line);
+  } else {
+    gST->ConOut->OutputString (gST->ConOut, L"  GOP: not available\r\n");
   }
 
-  // Wait 10s
-  gBS->Stall (10000000);
+  Options     = EfiBootManagerGetLoadOptions (&OptionCount, LoadOptionTypeBoot);
+  UnicodeSPrint (Line, sizeof (Line), L"  Boot options registered: %u\r\n", OptionCount);
+  gST->ConOut->OutputString (gST->ConOut, Line);
 
-  // Shutdown
-  gRT->ResetSystem (EfiResetShutdown, EFI_SUCCESS, 0, NULL);
+  for (Index = 0; Index < OptionCount; Index++) {
+    UnicodeSPrint (
+      Line,
+      sizeof (Line),
+      L"    [%u] %s\r\n",
+      Index,
+      Options[Index].Description
+      );
+    gST->ConOut->OutputString (gST->ConOut, Line);
+  }
 
-  // Do Cpu Dead Loop
+  if (Options != NULL) {
+    EfiBootManagerFreeLoadOptions (Options, OptionCount);
+  }
+
+  gST->ConOut->OutputString (gST->ConOut, L"  Halting on purpose - no ResetSystem.\r\n");
+
   CpuDeadLoop ();
 }
 
