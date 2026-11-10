@@ -2,7 +2,7 @@
 
 > **来源声明**：本仓库 fork 自 [Janit8r/uefi-rmx3823](https://github.com/Janit8r/uefi-rmx3823)
 > （其本身衍生自 Project Silicium 生态与 Project Mu，上游原 README 保留在文末）。
-> 本分支为 `unixnu/gt5-minimal`，由 miniyv 于 2026-11-10 完成全链打通验证。
+> 本仓库主分支为 `main`，由 miniyv 于 2026-11-10 完成全链打通验证。
 > 所有上游工作归属原作者，本分支仅做本机型适配与问题修复。
 
 realme GT5（RMX3823 / SM8550）的 UEFI 移植，目标是通过 UniXNU 引导 XNU。
@@ -59,7 +59,7 @@ python build_uefi.py -d rmx3823 -r DEBUG   # RELEASE 目前链接不过（Sec �
 - [ ] UniXNUDxe 报 `image not found`：补齐载荷文件 GUID
 - [ ] UFS 存储驱动（注意 dsc 中 `USE_CUSTOM_DISPLAY_DRIVER=1` 与
       `RMX3823_VENDOR_HW=0` 互斥，打开 UFS 需重新搭配显示链）
-- [ ] 引导项注册，让菜单真正可启动
+- [ ] 引导项登记：菜单界面已就绪，但"选择启动项"里还没有任何可启动的系统条目（Boot options: 0）
 - [ ] 内层 FV 已 99% 满，加驱动前先确认扩容策略
 - [ ] ABL 雷区目前只验证一处，压缩流变长后留意第二颗雷（CHKSUM 可检测）
 
