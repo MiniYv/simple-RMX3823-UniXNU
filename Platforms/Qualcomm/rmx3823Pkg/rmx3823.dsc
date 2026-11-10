@@ -72,7 +72,7 @@
   #
   # UEFI Stack
   #
-  gArmPlatformTokenSpaceGuid.PcdCPUCoresStackBase|0xA860D000
+  gArmPlatformTokenSpaceGuid.PcdCPUCoresStackBase|0xA760D000
   gArmPlatformTokenSpaceGuid.PcdCPUCorePrimaryStackSize|0x40000
 
   #
@@ -90,6 +90,28 @@
   gSiliciumPkgTokenSpaceGuid.PcdFrameBufferWidth|1240
   gSiliciumPkgTokenSpaceGuid.PcdFrameBufferHeight|2772
   gSiliciumPkgTokenSpaceGuid.PcdFrameBufferColorDepth|32
+
+  #
+  # UNIXNU BRING-UP TUNING -- readability of the on-panel log
+  #
+  # Delay: microseconds waited after every newline.
+  # 30000 (30 ms/line) is a compromise: fast enough that the whole SEC+DXE
+  # log fits in the watchdog window, slow enough to read.
+  #
+  # FontScale: 0 means "derive from the short edge". Fixed at 2 here:
+  # 1240/((5+1)*2) = 103 chars per line, 2772/((16-4)*2) = 115 lines per
+  # screen. That is more lines than SEC ever writes, so nothing SEC prints is
+  # scrolled off before the failure point is reached.
+  #
+  # FreezeWhenFull FALSE: DXE dispatch prints several hundred lines, far more
+  # than 115 screen lines. Freezing (the 2026-11-10 PAD-build setting) hid the
+  # BDS end state below a full screen. Scroll instead: the panel keeps the LAST
+  # 115 lines, which is what we want now that the failure point moved to the
+  # end of the boot.
+  #
+  gSiliciumPkgTokenSpaceGuid.PcdFrameBufferDelay|30000
+  gSiliciumPkgTokenSpaceGuid.PcdFrameBufferFontScale|2
+  gSiliciumPkgTokenSpaceGuid.PcdFrameBufferFreezeWhenFull|FALSE
 
   #
   # Platform PEI

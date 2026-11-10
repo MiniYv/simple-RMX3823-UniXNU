@@ -46,6 +46,8 @@
   PrintLib
   TimerLib
   HobLib
+  CpuLib
+  MemoryAllocationLib
 
 [Ppis]
   gArmMpCoreInfoPpiGuid
@@ -63,8 +65,13 @@
 
   gArmTokenSpaceGuid.PcdFdBaseAddress
   gArmTokenSpaceGuid.PcdFdSize
+  gArmTokenSpaceGuid.PcdFvBaseAddress
+  gArmTokenSpaceGuid.PcdFvSize
 
   gSiliciumPkgTokenSpaceGuid.PcdSmbiosSystemManufacturer
   gSiliciumPkgTokenSpaceGuid.PcdSmbiosSystemModel
+
+  gSiliciumPkgTokenSpaceGuid.PcdFrameBufferWidth
+  gSiliciumPkgTokenSpaceGuid.PcdFrameBufferHeight
 
   gEmbeddedTokenSpaceGuid.PcdPrePiCpuIoSize

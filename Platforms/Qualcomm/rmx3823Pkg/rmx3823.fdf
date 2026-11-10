@@ -84,7 +84,12 @@ READ_LOCK_STATUS   = TRUE
   !include Include/RAW.inc
 
   # RAM Manager
-  INF SiliciumPkg/Drivers/RamManagerDxe/RamManagerDxe.inf
+  # 2026-11-10: disabled. It consumes the Qualcomm EFI_RAMPARTITION_PROTOCOL,
+  # which the stock chain gets from ABL; in our fastboot-boot chain nothing
+  # installs it, so the driver asserted (SCROLL build ended at
+  # "ASSERT [RamManagerDxe] AutoGen.c"). The UEFI memory map already comes from
+  # MemoryMapLib, so this driver is dispensable for now.
+  #INF SiliciumPkg/Drivers/RamManagerDxe/RamManagerDxe.inf
 
   # SmBios
   INF MdeModulePkg/Universal/SmbiosDxe/SmbiosDxe.inf
@@ -136,7 +141,14 @@ READ_LOCK_STATUS   = TRUE
 
   INF SiliciumPkg/Sec/Sec.inf
 
+  # 2026-11-10 LZTEST/CHK on-device checksums proved the gunzipped FD carries a
+  # ~1.2 KB damaged patch inside FD offsets 0x349A6..0x47661 (chunk [2]), while
+  # 0x47661.. is byte-perfect - ABL stomps something into that fixed address
+  # range after decompressing. Dodge it: a 0x41000-byte RAW pad section pushes
+  # the compressed FVMAIN up to FD+0x50034, past the damage zone, so the only
+  # thing the stomper hits is this filler.
   FILE FV_IMAGE = 9E21FD93-9C72-4c15-8C4B-E77F1DB2D792 {
+    SECTION RAW = rmx3823Pkg/Pad.bin
     SECTION GUIDED EE4E5898-3914-4259-9D6E-DC7BD79403CF PROCESSING_REQUIRED = TRUE {
       SECTION FV_IMAGE = FVMAIN
     }

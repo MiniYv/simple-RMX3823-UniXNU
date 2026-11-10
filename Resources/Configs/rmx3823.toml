@@ -52,7 +52,7 @@ requires_kernel_header = true
 # Size stays 0x400000 (4 MiB), same headroom layout as upstream.
 #
 [uefi_fd]
-base = 0xA8000000
+base = 0xA7000000
 size = 0x400000
 
 #
