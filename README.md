@@ -1,4 +1,4 @@
-# uefi-rmx3823 · unixnu 分支
+# simple-RMX3823-UniXNU
 
 > **来源声明**：本仓库 fork 自 [Janit8r/uefi-rmx3823](https://github.com/Janit8r/uefi-rmx3823)
 > （其本身衍生自 Project Silicium 生态与 Project Mu，上游原 README 保留在文末）。
@@ -17,7 +17,7 @@ fastboot → ABL(gzip) → BootShim(避雷搬运) → SEC → FV 解压(LZMA)
 → 超时回落 → UnableToBoot 诊断 → "Halting on purpose" 按计划停机
 ```
 
-尚未完成：UniXNU 载荷补齐、UFS 存储驱动、引导项注册（见 TODO）。
+尚未完成：UniXNU 载荷补齐、UFS 存储驱动、引导项登记（见 TODO）。
 
 ## 相对上游的关键改动
 
