@@ -1,71 +1,88 @@
 # simple-RMX3823-UniXNU
 
-> **来源声明**：本仓库 fork 自 [Janit8r/uefi-rmx3823](https://github.com/Janit8r/uefi-rmx3823)
-> （其本身衍生自 Project Silicium 生态与 Project Mu，上游原 README 保留在文末）。
-> 本仓库主分支为 `main`，由 miniyv 于 2026-11-10 完成全链打通验证。
-> 所有上游工作归属原作者，本分支仅做本机型适配与问题修复。
+> **Provenance**: forked from [Janit8r/uefi-rmx3823](https://github.com/Janit8r/uefi-rmx3823),
+> which derives from the Project Silicium ecosystem and Project Mu (the original
+> upstream README is preserved at the bottom of this file). The default branch
+> is `main`; the full boot chain was verified on hardware by miniyv on
+> 2026-11-10. All upstream work belongs to its original authors; this fork
+> only contains board-specific adaptation and defect fixes.
 
-realme GT5（RMX3823 / SM8550）的 UEFI 移植，目标是通过 UniXNU 引导 XNU。
+UEFI port for the realme GT5 (RMX3823 / SM8550), with the goal of booting XNU
+through UniXNU. See [README.zh-CN.md](README.zh-CN.md) for the Chinese version.
 
-## 当前状态（2026-11-10 实测）
+## Current state (verified on hardware, 2026-11-10)
 
-`fastboot boot` 临时启动（**不写任何分区**）下，整条链路已贯通：
+Under `fastboot boot` (temporary boot — **no partitions are written**), the
+complete boot chain runs:
 
 ```
-fastboot → ABL(gzip) → BootShim(避雷搬运) → SEC → FV 解压(LZMA)
-→ DXE(全部驱动加载) → BDS → UniXNU 菜单(苹果 logo + 音量键可选)
-→ 超时回落 → UnableToBoot 诊断 → "Halting on purpose" 按计划停机
+fastboot → ABL (gzip) → BootShim → SEC → FV decompression (LZMA)
+→ DXE (all drivers dispatched) → BDS → UniXNU menu (Apple logo, volume-key
+navigation) → timeout fallback → UnableToBoot diagnostics → intentional halt
 ```
 
-尚未完成：UniXNU 载荷补齐、UFS 存储驱动、引导项登记（见 TODO）。
+Not done yet: UniXNU payload wiring, UFS storage driver, boot-option
+registration (see TODO).
 
-## 相对上游的关键改动
+## Key changes relative to upstream
 
-1. **避雷填充（最重要的修复）**：ABL 在 gunzip 输出的固件内偏移
-   `0x349A6–0x47661` 处会覆写约 1.2KB 数据，恰好砸中上游布局里的 LZMA
-   压缩流，导致 FV 解压必然失败（上游所有现成镜像均踩此雷，只是被
-   黑屏掩盖）。修复：FDF 在 SEC 后插入 `0x41000` 字节 RAW 填充
-   （`rmx3823Pkg/Pad.bin`），把压缩流整体挪到 `FD+0x50034` 起，雷区
-   只落在填充内。
-2. **摘除 RamManagerDxe**：该驱动依赖 ABL 提供的 Qualcomm
-   `EFI_RAMPARTITION_PROTOCOL`，fastboot 直启链无人安装，DEBUG 断言死
-   循环。内存映射已由 MemoryMapLib 提供，故移除。
-3. **BDS 不再关机**（`BootManagerLib`）：`PlatformBootManagerUnableToBoot`
-   去掉盖屏 / 停 10 秒 / `ResetSystem` 关机，改为打印 GOP 几何与引导项
-   数量后 `CpuDeadLoop()` 停住——黑屏曾是这个移植最大的障眼法。
-4. **SEC 现场诊断**（`Sec.c`）：FVDBG / LZTEST / DTBSYNC / CHKSUM 分层
-   打印内存中的 FV 实况；解压失败改为停住不冲屏。
-5. **控制台参数**：滚动 30ms/行、字体 2 倍、写满回卷（保留最后 115 行）。
+1. **Corruption-window avoidance (the critical fix).** ABL overwrites about
+   1.2 KB at a fixed offset (firmware offsets 0x349A6–0x47661) inside its own
+   gunzip output buffer. In the upstream layout that region lands in the
+   middle of the LZMA-compressed firmware volume, so FV decompression fails
+   on every prebuilt image (the failure was masked by the stock
+   screen-blanking behavior). Fix: the FDF inserts a 0x41000-byte RAW pad
+   section (`rmx3823Pkg/Pad.bin`) so the compressed volume starts at
+   `FD+0x50034`, past the corrupted window.
+2. **RamManagerDxe removed.** It requires the Qualcomm RamPartition protocol
+   that ABL provides in the stock chain; nothing installs it under
+   `fastboot boot`, so the driver asserted. The memory map is already supplied
+   by MemoryMapLib, so the driver is dispensable.
+3. **BDS no longer powers off.** `PlatformBootManagerUnableToBoot` no longer
+   blanks the screen, stalls 10 s and calls `ResetSystem`; it prints GOP
+   geometry and boot-option counts, then halts via `CpuDeadLoop()`. The
+   shutdown path had been masking the real failure point.
+4. **SEC on-device diagnostics** (`Sec.c`): layered FVDBG / LZTEST / DTBSYNC
+   / CHKSUM output of the in-memory firmware state; decompression failure
+   halts instead of returning.
+5. **Console parameters**: 30 ms per line, 2x font, wrap when full (keeps the
+   last 115 lines).
 
-## 构建要点（本机踩过的坑）
+## Build notes
 
 ```bash
-# 环境：隔离 venv + 干净 PATH（默认 PATH 里的 rm 包装会在删除第 50 个
-# 文件时拦住 make；PYTHONPATH 必须清空，否则 stuart 删除操作被拦）
+# Environment: isolated venv + clean PATH (the default PATH contains an rm
+# wrapper that blocks make after the 50th deletion; PYTHONPATH must be
+# emptied or stuart deletes get intercepted)
 export PATH=/usr/lib/llvm-22/bin:<venv>/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 export PYTHONPATH=
 export CLANGPDB_AARCH64_PREFIX=aarch64-linux-gnu-
 export RMX3823_EXTRA_PACKAGES="<UniXNU>/package:<UniXNU>/drivers/DarwinBoot"
-python build_uefi.py -d rmx3823 -r DEBUG   # RELEASE 目前链接不过（Sec 的串口构造函数）
+python build_uefi.py -d rmx3823 -r DEBUG   # RELEASE currently fails to link (Sec serial constructor)
 
-# 打包启动镜像（ABL 只认这一组参数）：
+# Boot image packaging (the only parameter set ABL accepts):
 #   header v0 / kernel_addr 0xA8000000 / tags 0x01E00000 / pagesize 4096
-#   载荷 = gzip(BootShim.bin + SILICIUM_UEFI.fd) + 2041002 字节 DTB 包
-#   （DTB 包从可正常显示的参考镜像尾部切出，magic d00dfeed）
+#   payload = gzip(BootShim.bin + SILICIUM_UEFI.fd) + 2041002-byte DTB blob
+#   (DTB blob cut from a known-good reference image, magic d00dfeed)
 ```
 
-## TODO（下一阶段）
+## TODO (next phase)
 
-- [ ] UniXNUDxe 报 `image not found`：补齐载荷文件 GUID
-- [ ] UFS 存储驱动（注意 dsc 中 `USE_CUSTOM_DISPLAY_DRIVER=1` 与
-      `RMX3823_VENDOR_HW=0` 互斥，打开 UFS 需重新搭配显示链）
-- [ ] 引导项登记：菜单界面已就绪，但"选择启动项"里还没有任何可启动的系统条目（Boot options: 0）
-- [ ] 内层 FV 已 99% 满，加驱动前先确认扩容策略
-- [ ] ABL 雷区目前只验证一处，压缩流变长后留意第二颗雷（CHKSUM 可检测）
+- [ ] UniXNUDxe reports `image not found`: wire up the payload file GUID
+- [ ] UFS storage driver (note: `USE_CUSTOM_DISPLAY_DRIVER=1` and
+      `RMX3823_VENDOR_HW=0` are mutually exclusive in the DSC; enabling UFS
+      requires reworking the display chain)
+- [ ] Boot-option registration: the menu UI is ready, but the boot-entry list
+      is still empty (Boot options: 0)
+- [ ] The inner FV is 99% full; confirm the growth strategy before adding drivers
+- [ ] Only one corruption window has been verified; watch for further
+      corrupted regions if the compressed stream grows (CHKSUM can detect)
 
 ---
 
-以下为上游原 README 保留：
+The original upstream README is preserved below:
+
+---
 
 # uefi-sheng
 
