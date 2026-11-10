@@ -9,3 +9,6 @@ BootShim.elf
 
 Mu-*.*
 *:Zone.Identifier
+
+# 2026-11-11: stray packing artifacts once slipped in, keep them out
+Platforms/Qualcomm/rmx3823Pkg/rmx3823-kernel*
