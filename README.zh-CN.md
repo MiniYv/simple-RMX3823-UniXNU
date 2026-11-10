@@ -60,6 +60,6 @@ python build_uefi.py -d rmx3823 -r DEBUG   # RELEASE 目前链接失败（Sec �
 - [ ] UFS 存储驱动（注意：dsc 中 `USE_CUSTOM_DISPLAY_DRIVER=1` 与
       `RMX3823_VENDOR_HW=0` 互斥，启用 UFS 需重新搭配显示链）
 - [ ] 引导项登记：菜单界面已就绪，但启动项列表仍为空（Boot options: 0）
-- [ ] 内层 FV 已占用 99%，新增驱动前需先确认扩容策略
+- [x] 内层 FV 随内容自适应大小（实测：移除驱动后自动缩小）；4MB 外层 FD 尚余约 3MB
 - [ ] 目前仅验证了一处损坏窗口；若压缩流增长，需留意其他未验证的
       损坏区域（CHKSUM 可检测）

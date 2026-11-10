@@ -74,7 +74,7 @@ python build_uefi.py -d rmx3823 -r DEBUG   # RELEASE currently fails to link (Se
       requires reworking the display chain)
 - [ ] Boot-option registration: the menu UI is ready, but the boot-entry list
       is still empty (Boot options: 0)
-- [ ] The inner FV is 99% full; confirm the growth strategy before adding drivers
+- [x] The inner FV auto-sizes with content (verified: it shrank when RamManagerDxe was removed); the 4 MiB FD has ~3 MiB headroom
 - [ ] Only one corruption window has been verified; watch for further
       corrupted regions if the compressed stream grows (CHKSUM can detect)
 
