@@ -80,6 +80,21 @@ READ_LOCK_CAP      = TRUE
 READ_LOCK_STATUS   = TRUE
 
   !include Include/APRIORI.inc
+
+  # Physical buttons (power + volume) as a SimpleTextIn device.
+  #
+  # Reads the SM8550 SPMI PMIC arbiter directly (PON RT_STS for power and volume
+  # down, PMIC GPIO for volume up) instead of going through the vendor chain,
+  # because the vendor chain needs SMEM and SMEM is empty in this boot path
+  # (measured 2026-11-16: 0x81D00000 2MB all zero). Ported from
+  # Platforms/Xiaomi/shengPkg/Drivers/ShengKeyInputDxe, same SoC.
+  #
+  # Placed ahead of DXE.inc so it is in the volume before BdsDxe; its depex
+  # (Timer + Variable) is satisfied by drivers listed earlier, so the dispatcher
+  # reaches it and the boot manager's connect pass then splits it into ConIn.
+  #
+  INF rmx3823Pkg/Driver/RmxKeyInputDxe/RmxKeyInputDxe.inf
+
   !include Include/DXE.inc
   !include Include/RAW.inc
 

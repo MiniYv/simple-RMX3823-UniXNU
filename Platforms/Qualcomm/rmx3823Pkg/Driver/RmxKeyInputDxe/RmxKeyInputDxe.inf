@@ -1,0 +1,45 @@
+## @file
+#  realme GT5 (RMX3823) power and volume keys as a SimpleTextIn device.
+#
+#  Ported from Platforms/Xiaomi/shengPkg/Drivers/ShengKeyInputDxe, which reads
+#  the same SM8550 SPMI PMIC arbiter. Needs no SMEM and no vendor driver.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x0001001B
+  BASE_NAME                      = RmxKeyInputDxe
+  FILE_GUID                      = 9B2F41C6-7A38-4E15-B362-5D18E4773DA9
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = RmxKeyInputDxeEntry
+
+[Sources]
+  RmxKeyInputDxe.c
+  RmxSpmiKeys.h
+
+[Packages]
+  MdePkg/MdePkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DevicePathLib
+  UefiRuntimeServicesTableLib
+  BaseMemoryLib
+  DebugLib
+  MemoryAllocationLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+  UefiLib
+
+[Protocols]
+  gEfiSimpleTextInProtocolGuid                  ## PRODUCES
+  gEfiDevicePathProtocolGuid                    ## PRODUCES
+
+[Guids]
+  gEfiEventExitBootServicesGuid                 ## CONSUMES
+  gEfiGlobalVariableGuid                        ## PRODUCES
+
+[Depex]
+  gEfiTimerArchProtocolGuid AND gEfiVariableArchProtocolGuid AND gEfiVariableWriteArchProtocolGuid

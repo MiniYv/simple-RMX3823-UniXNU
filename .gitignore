@@ -12,3 +12,7 @@ Mu-*.*
 
 # 2026-11-11: stray packing artifacts once slipped in, keep them out
 Platforms/Qualcomm/rmx3823Pkg/rmx3823-kernel*
+
+# 2026-11-16: build logs are per-run noise, never part of a snapshot
+build-*.log
+setup-*.log

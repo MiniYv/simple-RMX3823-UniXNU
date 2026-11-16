@@ -156,6 +156,12 @@
   qrd8550/AcpiTables.inf
 
   #
+  # Physical buttons (power + volume) through the SPMI PMIC arbiter.
+  # Ported from Platforms/Xiaomi/shengPkg/Drivers/ShengKeyInputDxe.
+  #
+  rmx3823Pkg/Driver/RmxKeyInputDxe/RmxKeyInputDxe.inf
+
+  #
   # UniXNU
   #
   UniXNUPkg/Application/UniXNU/UniXNU.inf
